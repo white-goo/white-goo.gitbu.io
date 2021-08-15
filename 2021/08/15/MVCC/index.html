@@ -4,7 +4,7 @@
 
 <head>
     
-    <title>文章归档 - 白咕咕</title>
+    <title>MVCC - 白咕咕</title>
     <meta charset="UTF-8">
     <meta name="description" content="">
     <meta name="keywords" content="">
@@ -16,17 +16,22 @@
 
 
     <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/favicon01.ico" type="image/x-icon" />
-    <meta property="og:type" content="website">
-<meta property="og:title" content="白咕咕">
-<meta property="og:url" content="https://white-goo.github.io/archives/index.html">
+    <meta name="description" content="简述MVCC">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MVCC">
+<meta property="og:url" content="https://white-goo.github.io/2021/08/15/MVCC/index.html">
 <meta property="og:site_name" content="白咕咕">
+<meta property="og:description" content="简述MVCC">
 <meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-08-15T05:12:12.301Z">
+<meta property="article:modified_time" content="2021-08-15T05:45:08.598Z">
 <meta property="article:author" content="white-goo">
+<meta property="article:tag" content="MVCC">
 <meta name="twitter:card" content="summary">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/highlight.js@9.15.8/styles/atom-one-dark.css,npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css,gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css,npm/hexo-theme-nexmoe@latest/source/lib/mdui_043tiny/css/mdui.css,npm/hexo-theme-nexmoe@latest/source/lib/iconfont/iconfont.css?v=233" crossorigin>
-    <link rel="stylesheet" href="/css/style.css?v=1629006368506">
+    <link rel="stylesheet" href="/css/style.css?v=1629006368438">
     
-    <link rel="stylesheet" href="/lib/iconfont/iconfont.css?v=1629006368506">
+    <link rel="stylesheet" href="/lib/iconfont/iconfont.css?v=1629006368438">
 <meta name="generator" content="Hexo 5.4.0"></head>
 
 <body class="mdui-drawer-body-left">
@@ -156,102 +161,101 @@
     </div>
     <div id="nexmoe-content">
         <div class="nexmoe-primary">
-            <section class="nexmoe-posts">
-    
-    <div class="nexmoe-post">
-        <a href="/2021/08/15/MVCC/">
-            
-                <div class="nexmoe-post-cover mdui-ripple" style="padding-bottom: 66.66666666666666%;"> 
-                    <img data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/R.jpg" data-sizes="auto" alt="MVCC" class="lazyload">
-                    <h1>MVCC</h1>
-                </div>
-            
-        </a>
+            <div class="nexmoe-post">
 
-        <div class="nexmoe-post-meta nexmoe-rainbow">
-            <a><i class="nexmoefont icon-calendar-fill"></i>2021年08月15日</a>
-            <a><i class="nexmoefont icon-areachart"></i>589 字</a>
-            <a><i class="nexmoefont icon-time-circle-fill"></i>大概 2 分钟</a>
-        </div>
+  <article>
+      
+          <div class="nexmoe-post-cover" style="padding-bottom: 66.66666666666666%;"> 
+              <img data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/R.jpg" data-sizes="auto" alt="MVCC" class="lazyload">
+              <h1>MVCC</h1>
+          </div>
+      
+      
+      <div class="nexmoe-post-meta nexmoe-rainbow" style="margin:10px 0!important;">
+    <a><i class="nexmoefont icon-calendar-fill"></i>2021年08月15日</a>
+    <a><i class="nexmoefont icon-areachart"></i>589 字</a>
+    <a><i class="nexmoefont icon-time-circle-fill"></i>大概 2 分钟</a>
+</div>
 
-        <article>
-            
-                简述MVCC
-            
-        </article>
+      
+
+      <p>MVCC就是多版本并发控制,主要处理读请求,而且是快照读</p>
+<ul>
+<li>快照读: 就是select查询</li>
+<li>当前读: 读取的数据都是最新版本的,会对读取的数据进行加锁,属于悲观锁的一种操作</li>
+</ul>
+<p>MVCC是基于undo log加版本链 和 read view去实现的</p>
+<ul>
+<li>undo log日志: 它记录的是对数据库的操作,除了会保存每次操作的数据,还会有trx_id和roll_pointer字段,trx_id就是事务id,是自增的,roll_pointer是指向上一个版本的回滚指针</li>
+<li>版本链: 由undo log日志中的每一天记录通过roll_pointer链接而成的一个链表</li>
+<li>read view: 是一个快照,其实就是一个对象,用来判断该使用版本链中的哪个版本,有以下属性<ul>
+<li>m_ids: 在生成read view时活跃的事务id,即未提交的事务的id</li>
+<li>min_trx_id: 在生成read view时最小的活跃的事务id,即m_ids中最小的那个</li>
+<li>max_trx_id: 在生成read view时,系统应该分配给下一个事务的id</li>
+<li>creator_trx_id: 表示生成该read view的事务的事务id</li>
+</ul>
+</li>
+<li>判断规则:<ul>
+<li>trx_id == creator_trx_id: 可以访问该版本,表示该条记录是自己创建的</li>
+<li>trx_id &lt; min_trx_id: 可以访问,表示小于最小的活跃事务id,即该trx_id所对应的事务一定是提交了的</li>
+<li>trx_id &gt; max_trx_id: 不可以访问,表示该事务id大于系统即将分配的事务id,一定是没有提交的事务</li>
+<li>min_trx_id &lt;= trx_id &lt;= max_trx_id: 如果trx_id在m_ids中,就不可以访问,不在就行,因为m_ids中的id并不一定是连续的,所以可能或出现已经提交的事务,已提交的事务是可以访问的</li>
+</ul>
+</li>
+</ul>
+<p>MVCC是如何实现不可重复读和可重复读?</p>
+<p>其实就是创建read view的时机不同</p>
+<ul>
+<li>不可重复读: 每次select,即快照读都会生成一份read view,这样,每次都能读到新的已提交的事务,就实现了不可重复读</li>
+<li>可重复读: read view在整个事务期间只会生成一份,这样就不能读取到新提交的事务,就实现了可重复读</li>
+</ul>
+<p>值得一提的是,innoDB引擎下,可以通过间隙锁解决幻读问题的,而且innoDB引擎是默认开启间隙锁的</p>
+
+  </article>
+
+  
+      
+    <div class="nexmoe-post-copyright">
+        <strong>本文作者：</strong>white-goo<br>
+        <strong>本文链接：</strong><a href="https://white-goo.github.io/2021/08/15/MVCC/" title="https:&#x2F;&#x2F;white-goo.github.io&#x2F;2021&#x2F;08&#x2F;15&#x2F;MVCC&#x2F;" target="_blank" rel="noopener">https:&#x2F;&#x2F;white-goo.github.io&#x2F;2021&#x2F;08&#x2F;15&#x2F;MVCC&#x2F;</a><br>
+        
+            <strong>版权声明：</strong>本文采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/deed.zh" target="_blank">CC BY-NC-SA 3.0 CN</a> 协议进行许可
+        
     </div>
+
+
+  
+  
+  <div class="nexmoe-post-meta nexmoe-rainbow">
     
-    <div class="nexmoe-post">
-        <a href="/2021/08/08/DeadLetter/">
-            
-                <div class="nexmoe-post-cover mdui-ripple" style="padding-bottom: 66.66666666666666%;"> 
-                    <img data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/R.jpg" data-sizes="auto" alt="RabbitMQ延时队列" class="lazyload">
-                    <h1>RabbitMQ延时队列</h1>
-                </div>
-            
-        </a>
-
-        <div class="nexmoe-post-meta nexmoe-rainbow">
-            <a><i class="nexmoefont icon-calendar-fill"></i>2021年08月08日</a>
-            <a><i class="nexmoefont icon-areachart"></i>1.4k 字</a>
-            <a><i class="nexmoefont icon-time-circle-fill"></i>大概 7 分钟</a>
-        </div>
-
-        <article>
-            
-                简述RabbitMQ延时队列
-            
-        </article>
-    </div>
+        <a class="nexmoefont icon-appstore-fill -link" href="/categories/%E8%87%AA%E5%AD%A6/">自学</a>
     
-    <div class="nexmoe-post">
-        <a href="/2021/08/02/RabbitMQ/">
-            
-                <div class="nexmoe-post-cover mdui-ripple" style="padding-bottom: 66.66666666666666%;"> 
-                    <img data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/R.jpg" data-sizes="auto" alt="RabbitMQ消息模型" class="lazyload">
-                    <h1>RabbitMQ消息模型</h1>
-                </div>
-            
-        </a>
-
-        <div class="nexmoe-post-meta nexmoe-rainbow">
-            <a><i class="nexmoefont icon-calendar-fill"></i>2021年08月02日</a>
-            <a><i class="nexmoefont icon-areachart"></i>2.2k 字</a>
-            <a><i class="nexmoefont icon-time-circle-fill"></i>大概 11 分钟</a>
-        </div>
-
-        <article>
-            
-                简述RabbitMQ的7种消息模型
-            
-        </article>
-    </div>
     
-    <div class="nexmoe-post">
-        <a href="/2021/08/01/shiro%E6%95%B4%E5%90%88jwt/">
-            
-                <div class="nexmoe-post-cover mdui-ripple" style="padding-bottom: NaN%;"> 
-                    <img data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/R.jpg" data-sizes="auto" alt="shiro整合jwt" class="lazyload">
-                    <h1>shiro整合jwt</h1>
-                </div>
-            
-        </a>
-
-        <div class="nexmoe-post-meta nexmoe-rainbow">
-            <a><i class="nexmoefont icon-calendar-fill"></i>2021年08月01日</a>
-            <a><i class="nexmoefont icon-areachart"></i>2.2k 字</a>
-            <a><i class="nexmoefont icon-time-circle-fill"></i>大概 11 分钟</a>
-        </div>
-
-        <article>
-            
-                shiro + jwt 算是比较常用的权限验证组合了,下面就来讲一下shiro整合jwt的步骤
-            
-        </article>
-    </div>
+        <a class="nexmoefont icon-tag-fill -none-link" href="/tags/MVCC/" rel="tag">MVCC</a>
     
+</div>
+
+  
+      <div class="nexmoe-post-footer">
+          <section class="nexmoe-comment">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.css">
+<div id="gitalk"></div>
+<script src="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.js"></script>
+<script type="text/javascript">
+    var gitalk = new Gitalk({
+        clientID: '902d1a554f8c01cb5c1b',
+        clientSecret: 'c6673af94dd0aa39bb640cd902b05f184d67d052',
+        id: window.location.pathname,
+        repo: 'white-goo.github.io',
+        owner: 'white-goo',
+        admin: 'white-goo'
+    })
+    gitalk.render('gitalk')
+</script>
 </section>
-
+      </div>
+  
+</div>
             <div class="nexmoe-post-right">
               <div class="nexmoe-fixed">
                   <div class="nexmoe-tool"> 
@@ -275,7 +279,7 @@
 
  
 
-<script async src="/js/app.js?v=1629006368508"></script>
+<script async src="/js/app.js?v=1629006368443"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js"></script>
 <script>
