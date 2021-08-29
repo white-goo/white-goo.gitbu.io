@@ -4,7 +4,7 @@
 
 <head>
     
-    <title>MVCC - 白咕咕</title>
+    <title>redis持久化 - 白咕咕</title>
     <meta charset="UTF-8">
     <meta name="description" content="">
     <meta name="keywords" content="">
@@ -16,22 +16,34 @@
 
 
     <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/favicon01.ico" type="image/x-icon" />
-    <meta name="description" content="简述MVCC">
+    <meta name="description" content="redis持久化">
 <meta property="og:type" content="article">
-<meta property="og:title" content="MVCC">
-<meta property="og:url" content="https://white-goo.github.io/2021/08/15/MVCC/index.html">
+<meta property="og:title" content="redis持久化">
+<meta property="og:url" content="https://white-goo.github.io/2021/08/29/redis%E6%8C%81%E4%B9%85%E5%8C%96/index.html">
 <meta property="og:site_name" content="白咕咕">
-<meta property="og:description" content="简述MVCC">
+<meta property="og:description" content="redis持久化">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2021-08-15T05:12:12.301Z">
-<meta property="article:modified_time" content="2021-08-15T05:45:08.598Z">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/RDB.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/DumpRDB.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/AOF.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/appendonly.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/AOFANDRDBCHECK.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/CHECKAOF.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/ReWrite.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/redis-master.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/redis-slaver1.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/redis-slaver2.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/sentinel.png">
+<meta property="article:published_time" content="2021-08-29T04:10:11.206Z">
+<meta property="article:modified_time" content="2021-08-29T14:21:23.815Z">
 <meta property="article:author" content="white-goo">
-<meta property="article:tag" content="MVCC">
+<meta property="article:tag" content="redis">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/RDB.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/highlight.js@9.15.8/styles/atom-one-dark.css,npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css,gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css,npm/hexo-theme-nexmoe@latest/source/lib/mdui_043tiny/css/mdui.css,npm/hexo-theme-nexmoe@latest/source/lib/iconfont/iconfont.css?v=233" crossorigin>
-    <link rel="stylesheet" href="/css/style.css?v=1630247537510">
+    <link rel="stylesheet" href="/css/style.css?v=1630247537505">
     
-    <link rel="stylesheet" href="/lib/iconfont/iconfont.css?v=1630247537510">
+    <link rel="stylesheet" href="/lib/iconfont/iconfont.css?v=1630247537505">
 <meta name="generator" content="Hexo 5.4.0"></head>
 
 <body class="mdui-drawer-body-left">
@@ -166,50 +178,92 @@
   <article>
       
           <div class="nexmoe-post-cover" style="padding-bottom: 66.66666666666666%;"> 
-              <img data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/R.jpg" data-sizes="auto" alt="MVCC" class="lazyload">
-              <h1>MVCC</h1>
+              <img data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/R.jpg" data-sizes="auto" alt="redis持久化" class="lazyload">
+              <h1>redis持久化</h1>
           </div>
       
       
       <div class="nexmoe-post-meta nexmoe-rainbow" style="margin:10px 0!important;">
-    <a><i class="nexmoefont icon-calendar-fill"></i>2021年08月15日</a>
-    <a><i class="nexmoefont icon-areachart"></i>589 字</a>
-    <a><i class="nexmoefont icon-time-circle-fill"></i>大概 2 分钟</a>
+    <a><i class="nexmoefont icon-calendar-fill"></i>2021年08月29日</a>
+    <a><i class="nexmoefont icon-areachart"></i>777 字</a>
+    <a><i class="nexmoefont icon-time-circle-fill"></i>大概 3 分钟</a>
 </div>
 
       
 
-      <p>MVCC就是多版本并发控制,主要处理读请求,而且是快照读</p>
+      <ul>
+<li><p>RDB</p>
 <ul>
-<li>快照读: 就是select查询</li>
-<li>当前读: 读取的数据都是最新版本的,会对读取的数据进行加锁,属于悲观锁的一种操作</li>
-</ul>
-<p>MVCC是基于undo log加版本链 和 read view去实现的</p>
-<ul>
-<li>undo log日志: 它记录的是对数据库的操作,除了会保存每次操作的数据,还会有trx_id和roll_pointer字段,trx_id就是事务id,是自增的,roll_pointer是指向上一个版本的回滚指针</li>
-<li>版本链: 由undo log日志中的每一天记录通过roll_pointer链接而成的一个链表</li>
-<li>read view: 是一个快照,其实就是一个对象,用来判断该使用版本链中的哪个版本,有以下属性<ul>
-<li>m_ids: 在生成read view时活跃的事务id,即未提交的事务的id</li>
-<li>min_trx_id: 在生成read view时最小的活跃的事务id,即m_ids中最小的那个</li>
-<li>max_trx_id: 在生成read view时,系统应该分配给下一个事务的id</li>
-<li>creator_trx_id: 表示生成该read view的事务的事务id</li>
-</ul>
+<li><p>在指定时间间隔,将内存中的数据写入到硬盘,redis会fork一个子线程来进行持久化,会先将数据写入到一个临时文件中,待持久化过程都结束了,再用这个临时文件替换上次持久化号的文件,整个过程中,主进程是不进行任何IO操作的,者就确保了极高的性能,如果需要进行大规模数据的回复,且对数据恢复的完整性不是非常敏感,那么RDB方式要比AOF方式更加的高效,RDB的缺点是最后一次持久化后的数据可能丢失</p>
 </li>
-<li>判断规则:<ul>
-<li>trx_id == creator_trx_id: 可以访问该版本,表示该条记录是自己创建的</li>
-<li>trx_id &lt; min_trx_id: 可以访问,表示小于最小的活跃事务id,即该trx_id所对应的事务一定是提交了的</li>
-<li>trx_id &gt; max_trx_id: 不可以访问,表示该事务id大于系统即将分配的事务id,一定是没有提交的事务</li>
-<li>min_trx_id &lt;= trx_id &lt;= max_trx_id: 如果trx_id在m_ids中,就不可以访问,不在就行,因为m_ids中的id并不一定是连续的,所以可能或出现已经提交的事务,已提交的事务是可以访问的</li>
-</ul>
+<li><p>fork是复制一个和当前进程一样的进程,新进程的所有数据都和袁锦程一致,该操作可能占用大量内存导致系统宕机</p>
+</li>
+<li><p>配置文件位置:</p>
+<p><img data-fancybox="gallery" data-sizes="auto" data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/RDB.png" alt="RDB" class="lazyload"></p>
+</li>
+<li><p>生成的dump.rdb</p>
+<p><img data-fancybox="gallery" data-sizes="auto" data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/DumpRDB.png" alt="image-20210829134010281" class="lazyload"></p>
 </li>
 </ul>
-<p>MVCC是如何实现不可重复读和可重复读?</p>
-<p>其实就是创建read view的时机不同</p>
+</li>
+<li><p>AOF</p>
 <ul>
-<li>不可重复读: 每次select,即快照读都会生成一份read view,这样,每次都能读到新的已提交的事务,就实现了不可重复读</li>
-<li>可重复读: read view在整个事务期间只会生成一份,这样就不能读取到新提交的事务,就实现了可重复读</li>
+<li><p>以日志的形式来记录每个写操作,将redis执行过的所有写指令记录下来,只许追加文件但不可以改写文件,redis启动之初会读取该文件重新构建数据,换言之,redis重启的话就根据日志文件的内容将写指令从前到后执行一次以完成数据的恢复工作</p>
+</li>
+<li><p>配置文件位置:</p>
+<p><img data-fancybox="gallery" data-sizes="auto" data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/AOF.png" alt="image-20210829134944430" class="lazyload"></p>
+</li>
+<li><p>生成的appendonly.aof</p>
+<p><img data-fancybox="gallery" data-sizes="auto" data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/appendonly.png" alt="image-20210829135423311" class="lazyload"></p>
+</li>
+<li><p>AOF和RDB可同时存在,优先使用AOF进行数据恢复</p>
+</li>
+<li><p>AOF和RDB修复</p>
+<p><img data-fancybox="gallery" data-sizes="auto" data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/AOFANDRDBCHECK.png" alt="image-20210829135946193" class="lazyload"></p>
+<p><img data-fancybox="gallery" data-sizes="auto" data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/CHECKAOF.png" alt="image-20210829140119004" class="lazyload"></p>
+<p>RDB同理</p>
+</li>
+<li><p>ReWrite</p>
+<ul>
+<li><p>AOF采用文件追加方式,文件会越来越大,为了避免这种情况,新增了重写机制,当AOF文件的大小超过设定的阈值时,Redis就会启动AOF文件的内容压缩.只保留可以恢复数据的最小指令集,可以使用命令bgrewriteaof</p>
+</li>
+<li><p>AOF文件持续增长而过大时,会fork出一条新的进程来将文件重写,遍历新进程的内存中的数据,每条记录有一条Set语句.重写aof文件的操作,并没有读取旧的aof文件,而是将整个内存中的数据库内容用命令的方式重写成一个新的aof文件.</p>
+</li>
+<li><p>配置文件详情</p>
+<p><img data-fancybox="gallery" data-sizes="auto" data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/ReWrite.png" alt="image-20210829141937981" class="lazyload"></p>
+</li>
 </ul>
-<p>值得一提的是,innoDB引擎下,可以通过间隙锁解决幻读问题的,而且innoDB引擎是默认开启间隙锁的</p>
+</li>
+</ul>
+</li>
+<li><p>主从复制</p>
+<ul>
+<li><p>主机数据发生变动,会自动同步到从机的master/slaver机制,master以写为主,slaver以读为主,主要用于读写分离容灾恢复</p>
+</li>
+<li><p>详细配置:</p>
+<ul>
+<li><p>从节点配置:</p>
+<p><code>slaveof 主机实际ip(如:192.168.92.130) 端口号</code></p>
+<p>如:<code>salveof 192.168.92.130 6379</code></p>
+</li>
+<li><p>最终效果:</p>
+<p>主节点:</p>
+<p><img data-fancybox="gallery" data-sizes="auto" data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/redis-master.png" alt="image-20210829201452297" class="lazyload"></p>
+<p>从节点:</p>
+<p><img data-fancybox="gallery" data-sizes="auto" data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/redis-slaver1.png" alt="image-20210829201513274" class="lazyload"></p>
+<p><img data-fancybox="gallery" data-sizes="auto" data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/redis-slaver2.png" alt="image-20210829201526869" class="lazyload"></p>
+</li>
+</ul>
+</li>
+<li><p>哨兵模式</p>
+<p>先创建<code>sentinel.conf</code>配置文件,名字不能错</p>
+<p><img data-fancybox="gallery" data-sizes="auto" data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/sentinel.png" alt="image-20210829212813338" class="lazyload"></p>
+<p>并在sentinel.conf中添加一句话: <code>sentinel monitor &lt;主节点名字,随便写&gt; &lt;主节点ip:172.17.0.5,docker下该ip为docker分配的容器ip:&#39;docker inspect 容器名称或id&#39;命令查看&gt; &lt;主节点端口号:6379&gt; &lt;票数超过多少时成为新的主节点:1&gt;</code></p>
+<p>通过<code>redis-sentinel &lt;sentinel.conf的路径&gt;</code>命令启动,使用了docker的话要在redis容器内部启动,哨兵最少起三个才能保证高可用.</p>
+</li>
+</ul>
+</li>
+</ul>
 
   </article>
 
@@ -217,7 +271,7 @@
       
     <div class="nexmoe-post-copyright">
         <strong>本文作者：</strong>white-goo<br>
-        <strong>本文链接：</strong><a href="https://white-goo.github.io/2021/08/15/MVCC/" title="https:&#x2F;&#x2F;white-goo.github.io&#x2F;2021&#x2F;08&#x2F;15&#x2F;MVCC&#x2F;" target="_blank" rel="noopener">https:&#x2F;&#x2F;white-goo.github.io&#x2F;2021&#x2F;08&#x2F;15&#x2F;MVCC&#x2F;</a><br>
+        <strong>本文链接：</strong><a href="https://white-goo.github.io/2021/08/29/redis%E6%8C%81%E4%B9%85%E5%8C%96/" title="https:&#x2F;&#x2F;white-goo.github.io&#x2F;2021&#x2F;08&#x2F;29&#x2F;redis%E6%8C%81%E4%B9%85%E5%8C%96&#x2F;" target="_blank" rel="noopener">https:&#x2F;&#x2F;white-goo.github.io&#x2F;2021&#x2F;08&#x2F;29&#x2F;redis%E6%8C%81%E4%B9%85%E5%8C%96&#x2F;</a><br>
         
             <strong>版权声明：</strong>本文采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/deed.zh" target="_blank">CC BY-NC-SA 3.0 CN</a> 协议进行许可
         
@@ -231,7 +285,7 @@
         <a class="nexmoefont icon-appstore-fill -link" href="/categories/%E8%87%AA%E5%AD%A6/">自学</a>
     
     
-        <a class="nexmoefont icon-tag-fill -none-link" href="/tags/MVCC/" rel="tag">MVCC</a>
+        <a class="nexmoefont icon-tag-fill -none-link" href="/tags/redis/" rel="tag">redis</a>
     
 </div>
 
@@ -279,7 +333,7 @@
 
  
 
-<script async src="/js/app.js?v=1630247537513"></script>
+<script async src="/js/app.js?v=1630247537509"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js"></script>
 <script>
