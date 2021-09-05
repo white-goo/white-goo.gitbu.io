@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+    
+    <title>简述netty工作流程 - 白咕咕</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+    
+    
+    <!-- Site Verification -->
+    <meta name="google-site-verification" content="XjWj9BOWpYdgTChREIG3E3LfQLYgiRZ8h3vDIWB1U40" />
+
+
+    <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/favicon01.ico" type="image/x-icon" />
+    <meta name="description" content="简述netty工作流程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="简述netty工作流程">
+<meta property="og:url" content="https://white-goo.github.io/2021/09/05/Netty%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:site_name" content="白咕咕">
+<meta property="og:description" content="简述netty工作流程">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/NettyServer.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/NettyClient.png">
+<meta property="article:published_time" content="2021-09-05T05:53:38.148Z">
+<meta property="article:modified_time" content="2021-09-05T08:17:30.911Z">
+<meta property="article:author" content="white-goo">
+<meta property="article:tag" content="Netty">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/NettyServer.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/highlight.js@9.15.8/styles/atom-one-dark.css,npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css,gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css,npm/hexo-theme-nexmoe@latest/source/lib/mdui_043tiny/css/mdui.css,npm/hexo-theme-nexmoe@latest/source/lib/iconfont/iconfont.css?v=233" crossorigin>
+    <link rel="stylesheet" href="/css/style.css?v=1630829869850">
+    
+    <link rel="stylesheet" href="/lib/iconfont/iconfont.css?v=1630829869850">
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body class="mdui-drawer-body-left">
+    
+    <div id="nexmoe-background">
+        <div class="nexmoe-bg" style="background-image: url(https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/R.jpg)"></div>
+        <div class="mdui-appbar mdui-shadow-0">
+            <div class="mdui-toolbar">
+                <a mdui-drawer="{target: '#drawer', swipe: true}" title="menu" class="mdui-btn mdui-btn-icon mdui-ripple"><i class="mdui-icon nexmoefont icon-menu"></i></a>
+                <div class="mdui-toolbar-spacer"></div>
+                <!--<a href="javascript:;" class="mdui-btn mdui-btn-icon"><i class="mdui-icon material-icons">search</i></a>-->
+                <a href="/" title="white-goo" class="mdui-btn mdui-btn-icon"><img src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/80722861_p0.jpg" alt="white-goo"></a>
+            </div>
+        </div>
+    </div>
+    <div id="nexmoe-header">
+        <div class="nexmoe-drawer mdui-drawer" id="drawer">
+    <div class="nexmoe-avatar mdui-ripple">
+        <a href="/" title="white-goo">
+            <img src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/80722861_p0.jpg" alt="white-goo" alt="white-goo">
+        </a>
+    </div>
+    <div class="nexmoe-count">
+        <div><span>文章</span>7</div>
+        <div><span>标签</span>6</div>
+        <div><span>分类</span>1</div>
+    </div>
+    <div class="nexmoe-list mdui-list" mdui-collapse="{accordion: true}">
+        
+        <a class="nexmoe-list-item mdui-list-item mdui-ripple false" href="/" title="回到首页">
+            <i class="mdui-list-item-icon nexmoefont icon-home"></i>
+            <div class="mdui-list-item-content">
+                回到首页
+            </div>
+        </a>
+        
+        <a class="nexmoe-list-item mdui-list-item mdui-ripple false" href="/archive.html" title="文章归档">
+            <i class="mdui-list-item-icon nexmoefont icon-container"></i>
+            <div class="mdui-list-item-content">
+                文章归档
+            </div>
+        </a>
+        
+        <a class="nexmoe-list-item mdui-list-item mdui-ripple false" href="/about.html" title="关于博客">
+            <i class="mdui-list-item-icon nexmoefont icon-info-circle"></i>
+            <div class="mdui-list-item-content">
+                关于博客
+            </div>
+        </a>
+        
+        <a class="nexmoe-list-item mdui-list-item mdui-ripple false" href="/py.html" title="我的朋友">
+            <i class="mdui-list-item-icon nexmoefont icon-unorderedlist"></i>
+            <div class="mdui-list-item-content">
+                我的朋友
+            </div>
+        </a>
+        
+    </div>
+    <aside id="nexmoe-sidebar">
+    
+    <div class="nexmoe-widget-wrap">
+    <div class="nexmoe-widget nexmoe-search">
+         
+            <form id="search_form" action_e="https://cn.bing.com/search?q=white-goo.github.io" onsubmit="return search();">
+                <label><input id="search_value" name="q" type="search" placeholder="搜索"></label>
+            </form>
+         
+    </div>
+</div>
+    
+    <div class="nexmoe-widget-wrap">
+    <div class="nexmoe-widget nexmoe-social">
+        <a class="mdui-ripple" href="http://wpa.qq.com/msgrd?v=3&uin=1263637745&site=qq&menu=yes" target="_blank" mdui-tooltip="{content: 'QQ'}" style="color: rgb(249, 174, 8);background-color: rgba(249, 174, 8, .1);">
+            <i class="nexmoefont icon-QQ"></i>
+        </a><a class="mdui-ripple" href="https://space.bilibili.com/12220162" target="_blank" mdui-tooltip="{content: '哔哩哔哩'}" style="color: rgb(231, 106, 141);background-color: rgba(231, 106, 141, .15);">
+            <i class="nexmoefont icon-bilibili"></i>
+        </a><a class="mdui-ripple" href="https://github.com/white-goo/" target="_blank" mdui-tooltip="{content: 'GitHub'}" style="color: rgb(25, 23, 23);background-color: rgba(25, 23, 23, .15);">
+            <i class="nexmoefont icon-github"></i>
+        </a>
+    </div>
+</div>
+    
+    
+  <div class="nexmoe-widget-wrap">
+    <h3 class="nexmoe-widget-title">文章分类</h3>
+    <div class="nexmoe-widget">
+
+      <ul class="category-list">
+
+        
+
+
+        
+
+        
+
+        <li class="category-list-item">
+          <a class="category-list-link" href="/categories/自学/">自学</a>
+          <span class="category-list-count">7</span>
+        </li>
+
+        
+      </ul>
+
+    </div>
+  </div>
+
+
+    
+    
+  <div class="nexmoe-widget-wrap">
+    <div id="randomtagcloud" class="nexmoe-widget tagcloud nexmoe-rainbow">
+      <a href="/tags/DDD/" style="font-size: 10px;">DDD</a> <a href="/tags/MVCC/" style="font-size: 10px;">MVCC</a> <a href="/tags/Netty/" style="font-size: 10px;">Netty</a> <a href="/tags/RabbitMQ/" style="font-size: 20px;">RabbitMQ</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/shiro/" style="font-size: 10px;">shiro</a>
+    </div>
+    
+  </div>
+
+    
+</aside>
+    <div class="nexmoe-copyright">
+        &copy; 2021 white-goo
+        Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+        & <a href="https://github.com/theme-nexmoe/hexo-theme-nexmoe" target="_blank">Nexmoe</a>
+        
+    </div>
+</div><!-- .nexmoe-drawer -->
+    </div>
+    <div id="nexmoe-content">
+        <div class="nexmoe-primary">
+            <div class="nexmoe-post">
+
+  <article>
+      
+          <div class="nexmoe-post-cover" style="padding-bottom: 66.66666666666666%;"> 
+              <img data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/R.jpg" data-sizes="auto" alt="简述netty工作流程" class="lazyload">
+              <h1>简述netty工作流程</h1>
+          </div>
+      
+      
+      <div class="nexmoe-post-meta nexmoe-rainbow" style="margin:10px 0!important;">
+    <a><i class="nexmoefont icon-calendar-fill"></i>2021年09月05日</a>
+    <a><i class="nexmoefont icon-areachart"></i>1.2k 字</a>
+    <a><i class="nexmoefont icon-time-circle-fill"></i>大概 6 分钟</a>
+</div>
+
+      
+
+      <h3 id="Netty核心组件介绍"><a href="#Netty核心组件介绍" class="headerlink" title="Netty核心组件介绍"></a>Netty核心组件介绍</h3><ul>
+<li>EventLoopGroup<ul>
+<li>看名字就知道,这是用来管理EventLoop的,同时将接收到的请求按轮询的方式转发给EventLoop</li>
+</ul>
+</li>
+<li>EventLoop<ul>
+<li>负责将EventLoopGroup转发过来的请求(SocketChannel)注册到selector,并监听后续事件</li>
+</ul>
+</li>
+<li>pipeline<ul>
+<li>每一个channel都有一个对应的pipeline,pipeline维护了一个双向链表,节点是ChannelHandlerContext,分出站(从服务器出去 Server -&gt; Client)和入站(近到服务器来 Client -&gt; Server)两个方向</li>
+</ul>
+</li>
+<li>ChannelHandler<ul>
+<li>真正干活的,用来处理各种事件,(读,写,连接等),分入站和出站两种,对应处理入站和出站所产生的事件</li>
+</ul>
+</li>
+<li>ChannelHandlerContext<ul>
+<li>ChannelHandler上下文对象,包含了跟当前连接关联的所有资源,简单来说就是可以拿到很多东西,此外,还是pipeline中的双向链表的结点</li>
+</ul>
+</li>
+<li>ChannelFuture<ul>
+<li>Channel异步IO操作的结果,该实例可提供有关IO操作的返回结果或状态</li>
+</ul>
+</li>
+</ul>
+<h3 id="Netty工作流程"><a href="#Netty工作流程" class="headerlink" title="Netty工作流程"></a>Netty工作流程</h3><p>​    netty采用的是主从reactor多线程模型</p>
+<p>​    作为服务端而言</p>
+<ul>
+<li>主reactor,也就是BossGrop(EventLoopGroup) 会处理连接请求,并把对应的SocketChannel交给WorkGroup(EventLoopGroup)</li>
+<li>WorkGroup拿到SocketChannel后,会按照轮询的方式获取一个自己所管理的EventLoop,并把它注册到该EventLoop所持有的selector上,并监听后续事件</li>
+<li>监听到入站或出站事件后,会调用pipeline中的入站处理器链(InBoundHandler)或出站处理器链(OudBoundHandler)进行处理</li>
+</ul>
+<h3 id="Demo"><a href="#Demo" class="headerlink" title="Demo"></a>Demo</h3><p>Server</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">import</span> io.netty.bootstrap.ServerBootstrap;<br><span class="hljs-keyword">import</span> io.netty.channel.ChannelFuture;<br><span class="hljs-keyword">import</span> io.netty.channel.ChannelInitializer;<br><span class="hljs-keyword">import</span> io.netty.channel.EventLoopGroup;<br><span class="hljs-keyword">import</span> io.netty.channel.nio.NioEventLoopGroup;<br><span class="hljs-keyword">import</span> io.netty.channel.socket.SocketChannel;<br><span class="hljs-keyword">import</span> io.netty.channel.socket.nio.NioServerSocketChannel;<br><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Server</span> </span>&#123;<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> </span>&#123;<br><br>        EventLoopGroup bossGroup = <span class="hljs-keyword">new</span> NioEventLoopGroup();<br>        EventLoopGroup workGroup = <span class="hljs-keyword">new</span> NioEventLoopGroup();<br>        ServerBootstrap serverBootstrap = <span class="hljs-keyword">new</span> ServerBootstrap();<br>        <span class="hljs-keyword">try</span> &#123;<br><br>            ChannelFuture cf = serverBootstrap<br>                    <span class="hljs-comment">//设置Group</span><br>                    .group(bossGroup, workGroup)<br>                    <span class="hljs-comment">//设置服务端Channel类型</span><br>                    .channel(NioServerSocketChannel.class)<br><span class="hljs-comment">//                    设置bossGroup的ChannelHandler</span><br><span class="hljs-comment">//                    .handler(new ChannelInitializer&lt;SocketChannel&gt;() &#123;</span><br><span class="hljs-comment">//                        @Override</span><br><span class="hljs-comment">//                        protected void initChannel(SocketChannel ch) throws Exception &#123;</span><br><span class="hljs-comment">//</span><br><span class="hljs-comment">//                        &#125;</span><br><span class="hljs-comment">//                    &#125;)</span><br>                    <span class="hljs-comment">//设置workGroup的处理器</span><br>                    .childHandler(<span class="hljs-keyword">new</span> ChannelInitializer&lt;SocketChannel&gt;() &#123;<br>                        <span class="hljs-meta">@Override</span><br>                        <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title">initChannel</span><span class="hljs-params">(SocketChannel ch)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>                            <span class="hljs-comment">//在管道的末尾添加一个处理器</span><br>                            ch.pipeline().addLast(<span class="hljs-keyword">new</span> ServerInBoundHandler());<br>                        &#125;<br>                    &#125;)<br>                    <span class="hljs-comment">//帮点监听的端口</span><br>                    .bind(<span class="hljs-number">6666</span>)<br>                    <span class="hljs-comment">//阻塞处理</span><br>                    .sync();<br>            System.out.println(<span class="hljs-string">&quot;服务器启动完成&quot;</span>);<br>            <span class="hljs-comment">//监听通道的关闭事件,并阻塞主线程</span><br>            cf.channel().closeFuture().sync();<br>        &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>            e.printStackTrace();<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            <span class="hljs-comment">//关闭资源</span><br>            bossGroup.shutdownGracefully();<br>            workGroup.shutdownGracefully();<br>        &#125;<br><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>Client</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">import</span> io.netty.bootstrap.Bootstrap;<br><span class="hljs-keyword">import</span> io.netty.channel.ChannelFuture;<br><span class="hljs-keyword">import</span> io.netty.channel.ChannelInitializer;<br><span class="hljs-keyword">import</span> io.netty.channel.EventLoopGroup;<br><span class="hljs-keyword">import</span> io.netty.channel.nio.NioEventLoopGroup;<br><span class="hljs-keyword">import</span> io.netty.channel.socket.nio.NioSocketChannel;<br><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Client</span> </span>&#123;<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> </span>&#123;<br>        EventLoopGroup workGroup = <span class="hljs-keyword">new</span> NioEventLoopGroup();<br>        Bootstrap bootstrap = <span class="hljs-keyword">new</span> Bootstrap();<br>        <span class="hljs-keyword">try</span> &#123;<br>            ChannelFuture connect = bootstrap<br>                    .group(workGroup)<br>                    .channel(NioSocketChannel.class)<br>                    .handler(<span class="hljs-keyword">new</span> ChannelInitializer&lt;NioSocketChannel&gt;() &#123;<br>                        <span class="hljs-meta">@Override</span><br>                        <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title">initChannel</span><span class="hljs-params">(NioSocketChannel ch)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>                            ch.pipeline().addLast(<span class="hljs-keyword">new</span> ClientInBoundHandler());<br>                        &#125;<br>                    &#125;)<br>                    .connect(<span class="hljs-string">&quot;127.0.0.1&quot;</span>, <span class="hljs-number">6666</span>)<br>                    .sync();<br>            connect.channel().closeFuture().sync();<br>        &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>            e.printStackTrace();<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            workGroup.shutdownGracefully();<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>ServerInBoundHandler</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java">mport io.netty.buffer.ByteBuf;<br><span class="hljs-keyword">import</span> io.netty.buffer.Unpooled;<br><span class="hljs-keyword">import</span> io.netty.channel.ChannelHandlerContext;<br><span class="hljs-keyword">import</span> io.netty.channel.ChannelInboundHandlerAdapter;<br><span class="hljs-keyword">import</span> io.netty.util.CharsetUtil;<br><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ServerInBoundHandler</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">ChannelInboundHandlerAdapter</span> </span>&#123;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * channel注册事件,channel被注册到selector的时候触发</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> ctx</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> Exception</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">channelRegistered</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        System.out.println(<span class="hljs-string">&quot;Server: channel要被注册了&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * channel注销事件</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> ctx</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> Exception</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">channelUnregistered</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        System.out.println(<span class="hljs-string">&quot;Server: channel注销了&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * channel处于活跃状态时的事件</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> ctx</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> Exception</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">channelActive</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        System.out.println(<span class="hljs-string">&quot;Server: channel处于活跃状态&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * channel处于非活跃状态时触发的事件</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> ctx</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> Exception</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">channelInactive</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        System.out.println(<span class="hljs-string">&quot;Server: channel不活跃了&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * channel触发读事件</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> ctx</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> msg</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> Exception</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">channelRead</span><span class="hljs-params">(ChannelHandlerContext ctx, Object msg)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        ByteBuf buf = (ByteBuf) msg;<br>        System.out.println(<span class="hljs-string">&quot;Server: 读事件触发,读取到的内容为: &quot;</span> + buf.toString(CharsetUtil.UTF_8));<br>        <span class="hljs-comment">//向客户端回复</span><br>        ctx.writeAndFlush(Unpooled.copiedBuffer(<span class="hljs-string">&quot;我是服务端&quot;</span>,CharsetUtil.UTF_8));<br>    &#125;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * channel读事件处理完毕</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> ctx</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> Exception</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">channelReadComplete</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        System.out.println(<span class="hljs-string">&quot;Server: 读完了&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     *用户自定义的事件被触发</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> ctx</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> evt</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> Exception</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">userEventTriggered</span><span class="hljs-params">(ChannelHandlerContext ctx, Object evt)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        System.out.println(<span class="hljs-string">&quot;Server: 自定义事件触发了&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * channel的可写属性被修改时触发</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> ctx</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> Exception</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">channelWritabilityChanged</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        System.out.println(<span class="hljs-string">&quot;Server: channel不能写了&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * 出现异常时触发</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> ctx</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> cause</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> Exception</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">exceptionCaught</span><span class="hljs-params">(ChannelHandlerContext ctx, Throwable cause)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        System.out.println(<span class="hljs-string">&quot;Server: 有异常! : &quot;</span> + cause.getMessage());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>ClientInBoundHandler</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">import</span> io.netty.buffer.ByteBuf;<br><span class="hljs-keyword">import</span> io.netty.buffer.Unpooled;<br><span class="hljs-keyword">import</span> io.netty.channel.ChannelHandlerContext;<br><span class="hljs-keyword">import</span> io.netty.channel.ChannelInboundHandlerAdapter;<br><span class="hljs-keyword">import</span> io.netty.util.CharsetUtil;<br><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ClientInBoundHandler</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">ChannelInboundHandlerAdapter</span> </span>&#123;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">channelRead</span><span class="hljs-params">(ChannelHandlerContext ctx, Object msg)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        ByteBuf buf = (ByteBuf) msg;<br>        System.out.println(<span class="hljs-string">&quot;服务端的回复: &quot;</span> + buf.toString(CharsetUtil.UTF_8));<br>        <span class="hljs-comment">//收到回复后关闭客户端</span><br>        ctx.close();<br>    &#125;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * 通道处于活动状态时触发</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> ctx</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> Exception</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">channelActive</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        <span class="hljs-comment">//向服务端发送消息</span><br>        ctx.writeAndFlush(Unpooled.copiedBuffer(<span class="hljs-string">&quot;我是客户端&quot;</span>, CharsetUtil.UTF_8));<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>结果:</p>
+<p><img data-fancybox="gallery" data-sizes="auto" data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/NettyServer.png" alt="image-20210905161142270" class="lazyload"></p>
+<p><img data-fancybox="gallery" data-sizes="auto" data-src="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/NettyClient.png" alt="image-20210905161014729" class="lazyload"></p>
+
+  </article>
+
+  
+      
+    <div class="nexmoe-post-copyright">
+        <strong>本文作者：</strong>white-goo<br>
+        <strong>本文链接：</strong><a href="https://white-goo.github.io/2021/09/05/Netty%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B/" title="https:&#x2F;&#x2F;white-goo.github.io&#x2F;2021&#x2F;09&#x2F;05&#x2F;Netty%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B&#x2F;" target="_blank" rel="noopener">https:&#x2F;&#x2F;white-goo.github.io&#x2F;2021&#x2F;09&#x2F;05&#x2F;Netty%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B&#x2F;</a><br>
+        
+            <strong>版权声明：</strong>本文采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/deed.zh" target="_blank">CC BY-NC-SA 3.0 CN</a> 协议进行许可
+        
+    </div>
+
+
+  
+  
+  <div class="nexmoe-post-meta nexmoe-rainbow">
+    
+        <a class="nexmoefont icon-appstore-fill -link" href="/categories/%E8%87%AA%E5%AD%A6/">自学</a>
+    
+    
+        <a class="nexmoefont icon-tag-fill -none-link" href="/tags/Netty/" rel="tag">Netty</a>
+    
+</div>
+
+  
+      <div class="nexmoe-post-footer">
+          <section class="nexmoe-comment">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.css">
+<div id="gitalk"></div>
+<script src="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.js"></script>
+<script type="text/javascript">
+    var gitalk = new Gitalk({
+        clientID: '902d1a554f8c01cb5c1b',
+        clientSecret: 'c6673af94dd0aa39bb640cd902b05f184d67d052',
+        id: window.location.pathname,
+        repo: 'white-goo.github.io',
+        owner: 'white-goo',
+        admin: 'white-goo'
+    })
+    gitalk.render('gitalk')
+</script>
+</section>
+      </div>
+  
+</div>
+            <div class="nexmoe-post-right">
+              <div class="nexmoe-fixed">
+                  <div class="nexmoe-tool"> 
+                    
+                      
+                        
+                          
+                          
+                              <button class="mdui-fab catalog" style="overflow:unset;">
+                                  <i class="nexmoefont icon-i-catalog"></i>
+                                  <div class="nexmoe-toc">
+                                      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Netty%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.</span> <span class="toc-text">Netty核心组件介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Netty%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-number">2.</span> <span class="toc-text">Netty工作流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Demo"><span class="toc-number">3.</span> <span class="toc-text">Demo</span></a></li></ol>
+                                  </div>
+                              </button>
+                          
+                          
+                      
+                    
+                      <a href="#nexmoe-content" class="toc-link" aria-label="回到顶部" title="top"><button class="mdui-fab mdui-ripple"><i class="nexmoefont icon-caret-top"></i></button></a>
+                  </div>
+              </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/combine/npm/lazysizes@5.1.0/lazysizes.min.js,npm/mdui@0.4.3/dist/js/mdui.min.js?v=1"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script>
+
+ 
+
+<script async src="/js/app.js?v=1630829869862"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js"></script>
+<script>
+	$(".justified-gallery").justifiedGallery({
+		rowHeight: 160,
+		margins: 10,
+	});
+</script>
+
+
+    
+    <!-- Google Analytics -->
+<script>
+    window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+    ga('create', 'GTM-PS5FLDZ', 'auto');
+    ga('send', 'pageview');
+</script>
+<script async src="https://www.google-analytics.com/analytics.js"></script>
+
+
+
+
+
+
+</body>
+
+</html>
