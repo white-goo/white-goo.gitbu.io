@@ -26,15 +26,15 @@
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/NettyServer.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/NettyClient.png">
 <meta property="article:published_time" content="2021-09-05T05:53:38.148Z">
-<meta property="article:modified_time" content="2021-09-05T08:17:30.911Z">
+<meta property="article:modified_time" content="2021-09-05T08:21:27.091Z">
 <meta property="article:author" content="white-goo">
 <meta property="article:tag" content="Netty">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/white-goo/white-goo.github.io@main/_images/NettyServer.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/highlight.js@9.15.8/styles/atom-one-dark.css,npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css,gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css,npm/hexo-theme-nexmoe@latest/source/lib/mdui_043tiny/css/mdui.css,npm/hexo-theme-nexmoe@latest/source/lib/iconfont/iconfont.css?v=233" crossorigin>
-    <link rel="stylesheet" href="/css/style.css?v=1630829869850">
+    <link rel="stylesheet" href="/css/style.css?v=1630830105439">
     
-    <link rel="stylesheet" href="/lib/iconfont/iconfont.css?v=1630829869850">
+    <link rel="stylesheet" href="/lib/iconfont/iconfont.css?v=1630830105439">
 <meta name="generator" content="Hexo 5.4.0"></head>
 
 <body class="mdui-drawer-body-left">
@@ -192,7 +192,7 @@
 </ul>
 </li>
 <li>pipeline<ul>
-<li>每一个channel都有一个对应的pipeline,pipeline维护了一个双向链表,节点是ChannelHandlerContext,分出站(从服务器出去 Server -&gt; Client)和入站(近到服务器来 Client -&gt; Server)两个方向</li>
+<li>每一个channel都有一个对应的pipeline,pipeline维护了一个双向链表,节点是ChannelHandlerContext,分出站(tail -&gt; head)和入站(head -&gt; tail)两个方向</li>
 </ul>
 </li>
 <li>ChannelHandler<ul>
@@ -306,7 +306,7 @@
 
  
 
-<script async src="/js/app.js?v=1630829869862"></script>
+<script async src="/js/app.js?v=1630830105450"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js"></script>
 <script>
